@@ -1,0 +1,41 @@
+from fastapi import APIRouter, Request, BackgroundTasks, Body
+from models import UserRegister, UserLogin, UserOut
+from services.login_service import user_login_service
+from services.register_service import user_register_service, user_verify_service, user_resend_verification_service
+from services.changepassword_serivce import user_change_password_service
+
+router = APIRouter(prefix="/v1/auth", tags=["Auth"])
+
+# Endpoint to Register
+@router.post("/register", response_model=UserOut)
+async def register_user(user: UserRegister, request: Request, background_tasks: BackgroundTasks):
+    return await user_register_service(user, request, background_tasks)
+
+
+@router.get("/verify-email")
+async def verify_email(token: str, request: Request):
+    return await user_verify_service(token, request)    
+
+
+@router.post("/resend-verification")
+async def resend_verification(email: str, request: Request, background_tasks: BackgroundTasks):
+    return await user_resend_verification_service(email, request, background_tasks)
+    
+# Endpoint to Login
+@router.post("/login")
+async def login_user(user: UserLogin, request: Request):
+    return await user_login_service(user, request)
+    
+
+# Endpoint to change password
+@router.post("/change-password")
+async def change_password(
+    email: str = Body(..., embed=True),   # or use JWT later for authenticated user
+    old_password: str = Body(..., embed=True),
+    new_password: str = Body(..., embed=True),
+    confirm_new_password: str = Body(..., embed=True),
+    request: Request = None
+):
+    return await user_change_password_service(
+        email, old_password, new_password, confirm_new_password, request
+    )   
