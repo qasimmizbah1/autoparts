@@ -47,28 +47,9 @@ async def user_register_service(user, request: Request, background_tasks):
             VALUES ($1, $2, $3, $4)
             RETURNING id::text, email, role, is_active, created_at
             """,
-            user.email, hashed_password, user.role, False
+            user.email, hashed_password, user.role, user.is_active
         )
         user_id = row["id"]
-
-        if(user.role == "buyer"):
-            row1 = await conn.fetchrow(
-            """
-            INSERT INTO buyer_profile (user_id, buyer_name, company_name, vat_number)
-            VALUES ($1, $2, $3, $4)
-            RETURNING buyer_name, company_name, vat_number
-            """,
-            user_id, user.name, user.company_name, user.vat_number
-            )
-        else:
-            row2 = await conn.fetchrow(
-            """
-            INSERT INTO supplier_profile (user_id, supplier_name, company_name)
-            VALUES ($1, $2, $3)
-            RETURNING id:: name, company_name
-            """,
-            user_id, user.name, user.company_name
-            )
         # Generate verification token
         verification_token = generate_verification_token()
         expires_at = datetime.utcnow() + timedelta(hours=24)

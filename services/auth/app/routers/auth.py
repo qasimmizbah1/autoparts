@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Request, BackgroundTasks, Body
-from models import UserRegister, UserLogin, UserOut
+from models import UserRegister, UserLogin, UserOut, ForgotPasswordRequest, ResetPasswordRequest
 from services.login_service import user_login_service
 from services.register_service import user_register_service, user_verify_service, user_resend_verification_service
-from services.changepassword_serivce import user_change_password_service
+from services.changepassword_serivce import user_change_password_service, forgot_password_service, reset_password_service
 
 router = APIRouter(prefix="/v1/auth", tags=["Auth"])
 
@@ -39,3 +39,15 @@ async def change_password(
     return await user_change_password_service(
         email, old_password, new_password, confirm_new_password, request
     )   
+
+
+# ---- Forgot password ----
+@router.post("/forgot-password")
+async def forgot_password(data: ForgotPasswordRequest, request: Request):
+    return await forgot_password_service(data.email, request)
+
+
+# ---- Reset password ----
+@router.post("/reset-password")
+async def reset_password(data: ResetPasswordRequest, request: Request):
+   return await reset_password_service(data, request)

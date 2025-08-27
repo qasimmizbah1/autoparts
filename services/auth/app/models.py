@@ -7,7 +7,9 @@ class UserRegister(BaseModel):
     email: EmailStr
     password: str
     role: Literal["buyer", "supplier", "admin"] = "buyer"  # only allowed roles
-    is_active: bool = False
+    vat_number: str | None = None
+    company_name: str
+    name: str
     @field_validator("password")
     def validate_password_strength(cls, v):
         if not re.search(r"[A-Z]", v):
@@ -36,4 +38,11 @@ class VerificationToken(BaseModel):
     user_id: str
     expires_at: datetime
 
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
 

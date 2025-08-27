@@ -39,5 +39,21 @@ async def lifespan(app: FastAPI):
         await conn.execute("CREATE INDEX IF NOT EXISTS idx_verification_tokens_token ON verification_tokens(token)")
         await conn.execute("CREATE INDEX IF NOT EXISTS idx_verification_tokens_user_id ON verification_tokens(user_id)")
 
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS password_reset_tokens (
+            id SERIAL PRIMARY KEY, 
+            user_id UUID NOT NULL,   
+            token TEXT UNIQUE NOT NULL,
+            expires_at TIMESTAMP NOT NULL,
+            created_at TIMESTAMP DEFAULT NOW(),
+            CONSTRAINT fk_user
+                FOREIGN KEY(user_id)
+                REFERENCES app_user(id)
+                ON DELETE CASCADE
+        )
+        """)
+        
+
+
     yield
     await app.state.pool.close()
