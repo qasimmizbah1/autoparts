@@ -6,5 +6,5 @@ app = FastAPI()
 
 @app.get("/")
 async def read_root():
-    return {"message": "Welcome to the Auto Parts API"} 
+    return {"message": "Welcome to the Auto Parts Marketplace API"} 
     
