@@ -1,13 +1,19 @@
 import asyncpg
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from dotenv import load_dotenv
+import os
+
+
+load_dotenv()
+
 
 DB_CONFIG = {
-    "user": "postgres",
-    "password": "123",
-    "database": "autoparts",
-    "host": "localhost",
-    "port": 5432,
+    "user": os.getenv("DB_USER"),
+    "password": os.getenv("DB_PASSWORD"),
+    "database": os.getenv("DB_NAME"),
+    "host": os.getenv("DB_HOST"),
+    "port": int(os.getenv("DB_PORT", 5432)),
 }
 
 @asynccontextmanager
@@ -51,6 +57,35 @@ async def lifespan(app: FastAPI):
                 REFERENCES app_user(id)
                 ON DELETE CASCADE
         )
+        """)
+        await conn.execute("""
+           CREATE EXTENSION IF NOT EXISTS pgcrypto
+        """)
+
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS system_log (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                user_id UUID NULL REFERENCES app_user(id) ON DELETE SET NULL,
+                level TEXT NOT NULL CHECK (level IN ('DEBUG','INFO','WARNING','ERROR','CRITICAL','AUDIT')),
+                action TEXT NOT NULL,               -- short description, e.g. "USER_LOGIN"
+                path TEXT,                          -- request path like "/auth/login"
+                ip INET,                            -- client IP
+                user_agent TEXT,
+                meta JSONB NOT NULL DEFAULT '{}'::jsonb,  -- extra data
+                created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+            )
+        """)
+        await conn.execute("""
+           CREATE INDEX IF NOT EXISTS system_log_created_at_idx ON system_log (created_at DESC)
+        """)
+        await conn.execute("""
+           CREATE INDEX IF NOT EXISTS system_log_user_id_idx ON system_log (user_id)
+        """)
+        await conn.execute("""
+          CREATE INDEX IF NOT EXISTS system_log_level_idx ON system_log (level)
+        """)
+        await conn.execute("""
+           CREATE INDEX IF NOT EXISTS system_log_meta_gin ON system_log USING GIN (meta)
         """)
         
 

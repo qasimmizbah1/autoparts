@@ -21,6 +21,7 @@ async def verify_email(token: str, request: Request):
 async def resend_verification(email: str, request: Request, background_tasks: BackgroundTasks):
     return await user_resend_verification_service(email, request, background_tasks)
     
+    
 # Endpoint to Login
 @router.post("/login")
 async def login_user(user: UserLogin, request: Request):

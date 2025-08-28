@@ -1,13 +1,16 @@
 import asyncpg
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from dotenv import load_dotenv
+import os
+load_dotenv()
 
 DB_CONFIG = {
-    "user": "postgres",
-    "password": "123",
-    "database": "autoparts",
-    "host": "localhost",
-    "port": 5432,
+    "user": os.getenv("DB_USER"),
+    "password": os.getenv("DB_PASSWORD"),
+    "database": os.getenv("DB_NAME"),
+    "host": os.getenv("DB_HOST"),
+    "port": int(os.getenv("DB_PORT", 5432)),
 }
 
 @asynccontextmanager
