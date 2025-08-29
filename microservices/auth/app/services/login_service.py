@@ -21,7 +21,7 @@ async def user_login_service(user, request: Request):
 
         token_expires = timedelta(minutes=30)
         access_token = create_access_token(
-            data={"user_id": str(db_user["id"])}, expires_delta=token_expires
+            data={"user_id": str(db_user["id"]),"role": db_user["role"]}, expires_delta=token_expires
         )
         
         return {

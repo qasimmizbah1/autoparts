@@ -5,13 +5,9 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, Query, Request, HTTPException
 from pydantic import UUID4
 from models import LogOut, LogListOut
+from deps import require_admin
 
-router = APIRouter(prefix="/admin/logs", tags=["Admin Logs"])
-
-# OPTIONAL: gate with an "admin" dependency
-async def require_admin():
-    # Replace with your auth/role logic; raise if not admin
-    return True
+router = APIRouter(prefix="/v1/admin/logs", tags=["Admin Logs"])
 
 @router.get("/", response_model=LogListOut, dependencies=[Depends(require_admin)])
 async def list_logs(

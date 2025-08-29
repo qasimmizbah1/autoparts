@@ -1,24 +1,25 @@
 from fastapi import APIRouter, HTTPException, Request, Depends
-from models import UserRequest, UserUpdate
+from models import UserRequest, BuyerUpdate, SupplierUpdate
 from uuid import UUID
+from deps import require_admin
 
-router = APIRouter(prefix="/manage-users", tags=["Manage Users"])
+router = APIRouter(prefix="/v1/manage-users", tags=["Manage Users"])
 
 
-@router.get("/buyer")
+@router.get("/buyer", dependencies=[Depends(require_admin)])
 async def view_profiles(request: Request):
     async with request.app.state.pool.acquire() as conn:
         rows = await conn.fetch("SELECT app_user.id, app_user.email, app_user.role, app_user.is_active,buyer_profile.buyer_name, buyer_profile.company_name, buyer_profile.vat_number FROM app_user JOIN buyer_profile ON app_user.id = buyer_profile.user_id WHERE app_user.role = 'buyer'")
         return [dict(row) for row in rows]
 
-@router.get("/supplier")
+@router.get("/supplier", dependencies=[Depends(require_admin)])
 async def view_profiles(request: Request):
     async with request.app.state.pool.acquire() as conn:
         rows = await conn.fetch("SELECT app_user.id, app_user.email, app_user.role, app_user.is_active,supplier_profile.supplier_name, supplier_profile.company_name, supplier_profile.kyc_status FROM app_user JOIN supplier_profile ON app_user.id = supplier_profile.user_id WHERE app_user.role = 'supplier'")
         return [dict(row) for row in rows]   
 
 
-@router.post("/buyer")
+@router.post("/buyer", dependencies=[Depends(require_admin)])
 async def get_user(data: UserRequest, request: Request):
     async with request.app.state.pool.acquire() as conn:
         row = await conn.fetchrow(
@@ -30,7 +31,7 @@ async def get_user(data: UserRequest, request: Request):
         return dict(row)
     
 
-@router.post("/supplier")
+@router.post("/supplier", dependencies=[Depends(require_admin)])
 async def get_user(data: UserRequest, request: Request):
     async with request.app.state.pool.acquire() as conn:
         row = await conn.fetchrow(
@@ -43,7 +44,7 @@ async def get_user(data: UserRequest, request: Request):
     
 
 
-@router.delete("/{user_id}", status_code=204)
+@router.delete("/{user_id}", status_code=204, dependencies=[Depends(require_admin)])
 async def delete_log(user_id: UUID, request: Request):
     async with request.app.state.pool.acquire() as conn:
         result = await conn.execute("DELETE FROM app_user WHERE id = $1", str(user_id))
@@ -54,38 +55,156 @@ async def delete_log(user_id: UUID, request: Request):
 
 
 
-@router.patch("/users/{user_id}", response_model=dict)
-async def update_user(user_id: UUID, user_update: UserUpdate, request: Request):
+@router.patch("/buyer/{user_id}", response_model=dict, dependencies=[Depends(require_admin)])
+async def update_buyer(user_id: UUID, user_update: BuyerUpdate, request: Request):
     async with request.app.state.pool.acquire() as conn:
-        # Fetch existing user
-        existing_user = await conn.fetchrow("SELECT * FROM app_user WHERE id=$1", str(user_id))
-        if not existing_user:
-            raise HTTPException(status_code=404, detail="User not found")
-        
-        # Build dynamic update query
-        update_fields = []
-        values = []
-        idx = 1
+        async with conn.transaction():
 
-        if user_update.email is not None:
-            update_fields.append(f"email = ${idx}")
-            values.append(user_update.email)
-            idx += 1
-        if user_update.full_name is not None:
-            update_fields.append(f"full_name = ${idx}")
-            values.append(user_update.full_name)
-            idx += 1
-        if user_update.is_active is not None:
-            update_fields.append(f"is_active = ${idx}")
-            values.append(user_update.is_active)
-            idx += 1
+            # Check if user exists
+            existing_user = await conn.fetchrow(
+                "SELECT * FROM app_user WHERE id=$1", str(user_id)
+            )
+            if not existing_user:
+                raise HTTPException(status_code=404, detail="User not found")
 
-        if not update_fields:
-            raise HTTPException(status_code=400, detail="No fields to update")
+            # ---------- Update app_user ----------
+            app_user_update_fields = []
+            app_user_values = []
+            idx = 1
 
-        values.append(str(user_id))
-        query = f"UPDATE app_user SET {', '.join(update_fields)} WHERE id=${idx} RETURNING *"
-        
-        updated_user = await conn.fetchrow(query, *values)
-        
-        return dict(updated_user)
+            if user_update.is_active is not None:
+                app_user_update_fields.append(f"is_active = ${idx}")
+                app_user_values.append(user_update.is_active)
+                idx += 1
+
+            updated_user = None
+            if app_user_update_fields:
+                app_user_values.append(str(user_id))
+                query = f"""
+                    UPDATE app_user 
+                    SET {', '.join(app_user_update_fields)} 
+                    WHERE id=${idx} 
+                    RETURNING *
+                """
+                updated_user = await conn.fetchrow(query, *app_user_values)
+            else:
+                updated_user = existing_user  # no changes to app_user
+
+            # ---------- Update buyer_profile ----------
+            profile_update_fields = []
+            profile_values = []
+            idx = 1
+
+            if user_update.buyer_name is not None:
+                profile_update_fields.append(f"buyer_name = ${idx}")
+                profile_values.append(user_update.buyer_name)
+                idx += 1
+
+            if user_update.company_name is not None:
+                profile_update_fields.append(f"company_name = ${idx}")
+                profile_values.append(user_update.company_name)
+                idx += 1
+
+            if user_update.vat_number is not None:
+                profile_update_fields.append(f"vat_number = ${idx}")
+                profile_values.append(user_update.vat_number)
+                idx += 1
+
+            updated_profile = None
+            if profile_update_fields:
+                profile_values.append(str(user_id))
+                query = f"""
+                    UPDATE buyer_profile 
+                    SET {', '.join(profile_update_fields)} 
+                    WHERE user_id=${idx} 
+                    RETURNING *
+                """
+                updated_profile = await conn.fetchrow(query, *profile_values)
+            else:
+                updated_profile = await conn.fetchrow(
+                    "SELECT * FROM buyer_profile WHERE user_id=$1", str(user_id)
+                )
+
+            # ---------- Return merged response ----------
+            return {
+                "user": dict(updated_user),
+                "buyer_profile": dict(updated_profile) if updated_profile else None,
+            }
+
+
+
+@router.patch("/supplier/{user_id}", response_model=dict, dependencies=[Depends(require_admin)])
+async def update_supplier(user_id: UUID, supplier_update: SupplierUpdate, request: Request):
+    async with request.app.state.pool.acquire() as conn:
+        async with conn.transaction():
+
+            # Check if user exists
+            existing_user = await conn.fetchrow(
+                "SELECT * FROM app_user WHERE id=$1", str(user_id)
+            )
+            if not existing_user:
+                raise HTTPException(status_code=404, detail="User not found")
+
+            # ---------- Update app_user ----------
+            app_user_update_fields = []
+            app_user_values = []
+            idx = 1
+
+            if supplier_update.is_active is not None:
+                app_user_update_fields.append(f"is_active = ${idx}")
+                app_user_values.append(supplier_update.is_active)
+                idx += 1
+
+            updated_user = None
+            if app_user_update_fields:
+                app_user_values.append(str(user_id))
+                query = f"""
+                    UPDATE app_user 
+                    SET {', '.join(app_user_update_fields)} 
+                    WHERE id=${idx} 
+                    RETURNING *
+                """
+                updated_user = await conn.fetchrow(query, *app_user_values)
+            else:
+                updated_user = existing_user  # no changes to app_user
+
+            # ---------- Update supplier_profile ----------
+            profile_update_fields = []
+            profile_values = []
+            idx = 1
+
+            if supplier_update.supplier_name is not None:
+                profile_update_fields.append(f"supplier_name = ${idx}")
+                profile_values.append(supplier_update.supplier_name)
+                idx += 1
+
+            if supplier_update.company_name is not None:
+                profile_update_fields.append(f"company_name = ${idx}")
+                profile_values.append(supplier_update.company_name)
+                idx += 1
+
+            if supplier_update.kyc_status is not None:
+                profile_update_fields.append(f"kyc_status = ${idx}")
+                profile_values.append(supplier_update.kyc_status)
+                idx += 1
+
+            updated_profile = None
+            if profile_update_fields:
+                profile_values.append(str(user_id))
+                query = f"""
+                    UPDATE supplier_profile 
+                    SET {', '.join(profile_update_fields)} 
+                    WHERE user_id=${idx} 
+                    RETURNING *
+                """
+                updated_profile = await conn.fetchrow(query, *profile_values)
+            else:
+                updated_profile = await conn.fetchrow(
+                    "SELECT * FROM supplier_profile WHERE user_id=$1", str(user_id)
+                )
+
+            # ---------- Return merged response ----------
+            return {
+                "user": dict(updated_user),
+                "supplier_profile": dict(updated_profile) if updated_profile else None,
+            }

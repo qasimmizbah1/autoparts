@@ -49,7 +49,15 @@ class LogListOut(BaseModel):
     total: int
     pages: int
 
-class UserUpdate(BaseModel):
-    email: Optional[EmailStr] = None
-    full_name: Optional[str] = None
+class BuyerUpdate(BaseModel):
     is_active: Optional[bool] = None
+    buyer_name: Optional[str] = None
+    company_name: Optional[str] = None
+    vat_number: Optional[str] = None
+    
+
+class SupplierUpdate(BaseModel):
+    is_active: Optional[bool] = None
+    supplier_name: Optional[str] = None
+    company_name: Optional[str] = None
+    kyc_status: Optional[str] = None
