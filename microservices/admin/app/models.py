@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field, UUID4, EmailStr
+from uuid import UUID
 from typing import Literal
 from datetime import datetime
 import re
@@ -61,3 +62,17 @@ class SupplierUpdate(BaseModel):
     supplier_name: Optional[str] = None
     company_name: Optional[str] = None
     kyc_status: Optional[str] = None
+
+
+class VehicleMake(BaseModel):
+    name: str
+
+class VehicleModel(BaseModel):
+    make_id: UUID
+    name: str
+
+class VehicleTrim(BaseModel):
+    model_id: UUID
+    year_from: Optional[int]
+    year_to: Optional[int]
+    trim: Optional[str]
