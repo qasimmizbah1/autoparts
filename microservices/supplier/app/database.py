@@ -20,20 +20,17 @@ async def lifespan(app: FastAPI):
     async with app.state.pool.acquire() as conn:
     # Create users table
         await conn.execute("""
-                CREATE TABLE IF NOT EXISTS part_request (
-                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                user_id UUID NOT NULL REFERENCES app_user(id),
-                title TEXT NOT NULL,
-                description TEXT,
-                urgency TEXT CHECK (urgency IN ('low','normal','high','critical')) NOT NULL,
-                required_by_date DATE,
-                vehicle_make TEXT NOT NULL,
-                vehicle_model TEXT NOT NULL,
-                vehicle_model_trim TEXT NOT NULL,
-                attachment TEXT,
-                created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-                updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
-                )
+                CREATE TABLE IF NOT EXISTS quote ( 
+                    id UUID PRIMARY KEY DEFAULT gen_random_uuid(), 
+                    request_id UUID NOT NULL REFERENCES part_request(id) ON DELETE CASCADE, 
+                    supplier_id UUID NOT NULL REFERENCES supplier_profile(id), 
+                    price_cents BIGINT NOT NULL CHECK (price_cents >= 0), 
+                    currency CHAR(3) NOT NULL DEFAULT 'ZAR', 
+                    eta_days SMALLINT, 
+                    terms TEXT, 
+                    is_accepted BOOLEAN NOT NULL DEFAULT FALSE, 
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT now() 
+                    )
         """)
         await conn.execute("""
             CREATE TABLE  IF NOT EXISTS supplier_profile ( 

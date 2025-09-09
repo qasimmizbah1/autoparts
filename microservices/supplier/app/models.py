@@ -34,8 +34,24 @@ class PartRequestInDB(PartRequest):
     created_at: datetime
     updated_at: datetime
 
-class AcceptQuoteSchema(BaseModel):
-    quote_id: str  # or UUID if you want
+class QuoteCreate(BaseModel):
+    request_id: UUID
+    supplier_id: UUID
+    price_cents: int
+    currency: str = "ZAR"
+    eta_days: Optional[int] = None
+    terms: Optional[str] = None
 
-class ViewQuoteSchema(BaseModel):
-    request_id: UUID  # UUID directly from JSON body
+class QuoteUpdate(BaseModel):
+    price_cents: Optional[int] = None
+    currency: Optional[str] = None
+    eta_days: Optional[int] = None
+    terms: Optional[str] = None
+
+
+class PartRequestSearch(BaseModel):
+    title: Optional[str] = None
+    urgency: Optional[str] = None
+    description: Optional[str] = None
+    vehicle_make: Optional[str] = None
+    vehicle_model: Optional[str] = None
