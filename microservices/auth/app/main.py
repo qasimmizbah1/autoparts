@@ -1,15 +1,22 @@
 from fastapi import FastAPI
 from database import lifespan
 from routers import auth
-from routers import profiles
-from routers import logs
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(lifespan=lifespan)
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],   # allow all domains
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # include auth routes
 app.include_router(auth.router)
-app.include_router(profiles.router)
-app.include_router(logs.router)
+
+
 
 @app.get("/")
 async def read_root():

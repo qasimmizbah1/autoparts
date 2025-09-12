@@ -28,7 +28,7 @@ async def send_email(to_email: str, subject: str, body: str):
         start_tls=True,
     )
 
-@router.post("/quote/by-request/")
+@router.post("/quote/by-request/", dependencies=[Depends(require_buyer)])
 async def get_quotes_by_request(
     request: Request,
     data: ViewQuoteSchema
@@ -41,7 +41,7 @@ async def get_quotes_by_request(
         return [dict(r) for r in rows]
 
 
-@router.put("/quote/accept")
+@router.put("/quote/accept", dependencies=[Depends(require_buyer)])
 async def accept_quote(
     request: Request,
     data: AcceptQuoteSchema,

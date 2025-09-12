@@ -27,6 +27,8 @@ class PartRequest(BaseModel):
     vehicle_model: str
     vehicle_model_trim: str
     attachment: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
 
 
 class PartRequestInDB(PartRequest):
@@ -39,3 +41,5 @@ class AcceptQuoteSchema(BaseModel):
 
 class ViewQuoteSchema(BaseModel):
     request_id: UUID  # UUID directly from JSON body
+
+    

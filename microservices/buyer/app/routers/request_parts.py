@@ -14,21 +14,21 @@ router = APIRouter(prefix="/v1/buyer", tags=["Part Requests"])
 
 # --- Vehicle Make ---
 
-@router.get("/vehicle/make/")
-async def get_makes(request: Request):
-    return await get_makes_service(request)
+# @router.get("/vehicle/make/")
+# async def get_makes(request: Request):
+#     return await get_makes_service(request)
     
-@router.get("/vehicle/model/{make_id}")
-async def get_models(make_id: str, request: Request):
-    return await get_models_service(make_id, request)
+# @router.get("/vehicle/model/{make_id}")
+# async def get_models(make_id: str, request: Request):
+#     return await get_models_service(make_id, request)
 
-@router.get("/vehicle/trim/{model_id}")
-async def get_trims(model_id: str, request: Request):
-    return await get_trims_service(model_id, request)
+# @router.get("/vehicle/trim/{model_id}")
+# async def get_trims(model_id: str, request: Request):
+#     return await get_trims_service(model_id, request)
 
 
 #Create Request
-@router.post("/part-request", response_model=PartRequestInDB, dependencies=[Depends(require_buyer)])
+@router.post("/part-request", response_model=PartRequest, dependencies=[Depends(require_buyer)])
 async def create_part_request(
     request: Request,
     user_id: UUID = Form(...),

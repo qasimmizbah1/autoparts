@@ -15,3 +15,4 @@ async def send_verification_email(email: str, token: str, request):
         print(f"Verification email for: {email}")
         print(f"Verification URL: {verification_url}")
         print(f"Token: {token}")
+        
