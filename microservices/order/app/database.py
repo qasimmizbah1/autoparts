@@ -20,15 +20,20 @@ async def lifespan(app: FastAPI):
     async with app.state.pool.acquire() as conn:
     # Create users table
         await conn.execute("""
-            CREATE TABLE IF NOT EXISTS buyer_profile (
-                  id UUID PRIMARY KEY DEFAULT gen_random_uuid(), 
-                    user_id UUID NOT NULL REFERENCES app_user(id) UNIQUE, 
-                    buyer_name varchar(255),
-                    company_name TEXT, 
-                    vat_number TEXT, 
-                    created_at TIMESTAMPTZ NOT NULL DEFAULT now(), 
-                    updated_at TIMESTAMPTZ NOT NULL DEFAULT now() 
-            )
+                CREATE TABLE IF NOT EXISTS part_request (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                user_id UUID NOT NULL REFERENCES app_user(id),
+                title TEXT NOT NULL,
+                description TEXT,
+                urgency TEXT CHECK (urgency IN ('low','normal','high','critical')) NOT NULL,
+                required_by_date DATE,
+                vehicle_make TEXT NOT NULL,
+                vehicle_model TEXT NOT NULL,
+                vehicle_model_trim TEXT NOT NULL,
+                attachment TEXT,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+                )
         """)
         await conn.execute("""
             CREATE TABLE  IF NOT EXISTS supplier_profile ( 
@@ -40,18 +45,6 @@ async def lifespan(app: FastAPI):
             ('pending','approved','rejected')), 
             created_at TIMESTAMPTZ NOT NULL DEFAULT now(), 
             updated_at TIMESTAMPTZ NOT NULL DEFAULT now() 
-            )
-        """)
-        await conn.execute("""
-                        CREATE TABLE  IF NOT EXISTS buyer_address ( 
-            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-            buyer_id UUID NOT NULL REFERENCES buyer_profile(id),  
-            line1 TEXT NOT NULL, 
-            line2 TEXT, 
-            city TEXT, 
-            province TEXT, 
-            postal_code TEXT, 
-            country CHAR(2) NOT NULL DEFAULT 'ZA' 
             )
         """)
 

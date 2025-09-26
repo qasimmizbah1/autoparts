@@ -19,10 +19,11 @@ async def user_login_service(user, request: Request):
             )
             raise HTTPException(status_code=401, detail="Invalid credentials")
 
-        token_expires = timedelta(minutes=30)
+        token_expires = timedelta(minutes=3600)
         access_token = create_access_token(
             data={"user_id": str(db_user["id"]),"role": db_user["role"]}, expires_delta=token_expires
         )
+        
         
         return {
             "access_token": access_token,

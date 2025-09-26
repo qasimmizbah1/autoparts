@@ -1,5 +1,5 @@
-from pydantic import BaseModel, EmailStr, Field, field_validator
-from typing import Literal
+from pydantic import BaseModel, EmailStr, Field
+from typing import Optional
 from datetime import datetime
 import re
 from uuid import UUID
@@ -19,3 +19,11 @@ class SupplierProfileData(BaseModel):
     name: str
     company_name: str
     kyc_status: str
+
+class BuyerAddressSchema(BaseModel):
+    line1: str
+    line2: Optional[str] = None
+    city: Optional[str] = None
+    province: Optional[str] = None
+    postal_code: Optional[str] = None
+    country: str = "ZA"

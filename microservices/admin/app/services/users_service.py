@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Request, Depends
+from fastapi import APIRouter, HTTPException, Request, Depends, Response
 from models import UserRequest, BuyerUpdate, SupplierUpdate
 from uuid import UUID
 from deps import require_admin
@@ -39,13 +39,14 @@ async def get_user_sup_service(data, request: Request):
     
 
 
-async def delete_log_service(user_id, request: Request):
+async def delete_user_service(user_id, request: Request):
     async with request.app.state.pool.acquire() as conn:
         result = await conn.execute("DELETE FROM app_user WHERE id = $1", str(user_id))
         # result like "DELETE 1"
         if result.endswith("0"):
             raise HTTPException(status_code=404, detail="User not found")
-    return
+        
+    return {"message": "User and related profiles deleted successfully"}
 
 
 

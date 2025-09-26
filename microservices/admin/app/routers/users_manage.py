@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Request, Depends
 from models import UserRequest, BuyerUpdate, SupplierUpdate
 from uuid import UUID
 from deps import require_admin
-from services.users_service import view_buyer_service, view_supplier_service, get_user_buyer_service, get_user_sup_service, delete_log_service, update_buyer_service, update_supplier_service
+from services.users_service import view_buyer_service, view_supplier_service, get_user_buyer_service, get_user_sup_service, delete_user_service, update_buyer_service, update_supplier_service
 
 router = APIRouter(prefix="/v1/admin/manage-users", tags=["Manage Users"])
 
@@ -27,9 +27,9 @@ async def get_sup_user(data: UserRequest, request: Request):
     
 
 
-@router.delete("/{user_id}", status_code=204, dependencies=[Depends(require_admin)])
+@router.delete("/{user_id}", status_code=200)
 async def delete_log(user_id: UUID, request: Request):
-    return await delete_log_service(user_id, request)
+    return await delete_user_service(user_id, request)
 
 
 

@@ -60,3 +60,13 @@ async def get_models_service(make_name: str, request: Request):
             "make_id": str(make_row["id"]),
             "models": list(models.values())
         }
+
+
+async def delete_make_service(make_id, request: Request):
+    async with request.app.state.pool.acquire() as conn:
+        result = await conn.execute("DELETE FROM vehicle_make WHERE id = $1", str(make_id))
+        # result like "DELETE 1"
+        if result.endswith("0"):
+            raise HTTPException(status_code=404, detail="User not found")
+        
+    return {"message": "User and related profiles deleted successfully"}
