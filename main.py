@@ -3,11 +3,8 @@ from fastapi.responses import JSONResponse
 
 app = FastAPI()
 
-
-
-@app.get("/")
-async def head_root():
-    return JSONResponse(status_code=200)
-async def read_root():
-    return {"message": "Welcome to the Auto Parts Marketplace API"} 
-    
+# This route will respond to both GET and HEAD requests
+@app.get("/", response_class=JSONResponse)
+@app.head("/")
+async def root():
+    return {"message": "Welcome to the Auto Parts Marketplace API"}
