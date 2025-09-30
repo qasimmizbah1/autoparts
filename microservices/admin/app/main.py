@@ -24,3 +24,5 @@ app.include_router(vehicle_manage.router)
 async def read_root():
     return {"message": "Welcome to the Auto Parts Admin API "} 
     
+def root():
+    return {"service": "admin"}
