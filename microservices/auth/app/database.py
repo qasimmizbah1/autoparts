@@ -26,9 +26,7 @@ async def lifespan(app: FastAPI):
     async with app.state.pool.acquire() as conn:
     # Create users table
 
-        await conn.execute("""
-             CREATE EXTENSION IF NOT EXISTS citext
-        """)
+        await conn.execute("CREATE EXTENSION IF NOT EXISTS citext;")
     
    
         await conn.execute("""
