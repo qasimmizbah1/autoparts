@@ -16,19 +16,12 @@ DB_CONFIG = {
     "port": int(os.getenv("DB_PORT", 5432)),
 }
 
-
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.pool = await asyncpg.create_pool(**DB_CONFIG)
 
     async with app.state.pool.acquire() as conn:
     # Create users table
-
-        await conn.execute("CREATE EXTENSION IF NOT EXISTS citext;")
-    
-   
         await conn.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,

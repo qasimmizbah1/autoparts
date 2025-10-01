@@ -3,20 +3,6 @@ from typing import Optional
 from uuid import UUID
 from datetime import date, datetime
 
-class VehicleMake(BaseModel):
-    name: str
-
-class VehicleModel(BaseModel):
-    make_id: UUID
-    name: str
-
-class VehicleTrim(BaseModel):
-    model_id: UUID
-    year_from: Optional[int]
-    year_to: Optional[int]
-    trim: Optional[str]
-
-
 class PartRequest(BaseModel):
     user_id: UUID
     title: str
@@ -41,5 +27,19 @@ class AcceptQuoteSchema(BaseModel):
 
 class ViewQuoteSchema(BaseModel):
     request_id: UUID  # UUID directly from JSON body
+
+
+class OrderCreate(BaseModel):
+    quote_id: UUID
+    buyer_id: UUID
+    supplier_id: UUID
+    shipping_to_address_id: Optional[UUID] = None
+    shipping_from_address_id: Optional[UUID] = None
+    status: Optional[str] = "PENDING_HOLD"
+
+class OrderUpdate(BaseModel):
+    status: Optional[str] = None
+    shipping_to_address_id: Optional[UUID] = None
+    shipping_from_address_id: Optional[UUID] = None
 
     
