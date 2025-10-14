@@ -28,7 +28,7 @@ async def get_sup_user(data: UserRequest, request: Request):
 
 
 @router.delete("/{user_id}", status_code=200)
-async def delete_log(user_id: UUID, request: Request):
+async def delete_user(user_id: UUID, request: Request):
     return await delete_user_service(user_id, request)
 
 

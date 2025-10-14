@@ -39,14 +39,49 @@ async def get_user_sup_service(data, request: Request):
     
 
 
+# async def delete_user_service(user_id, request: Request):
+#     async with request.app.state.pool.acquire() as conn:
+#         result = await conn.execute("DELETE FROM app_user WHERE id = $1", str(user_id))
+#         # result like "DELETE 1"
+#         if result.endswith("0"):
+#             raise HTTPException(status_code=404, detail="User not found")
+        
+#     return {"message": "User and related profiles deleted successfully"}
+
 async def delete_user_service(user_id, request: Request):
     async with request.app.state.pool.acquire() as conn:
-        result = await conn.execute("DELETE FROM app_user WHERE id = $1", str(user_id))
-        # result like "DELETE 1"
-        if result.endswith("0"):
-            raise HTTPException(status_code=404, detail="User not found")
-        
-    return {"message": "User and related profiles deleted successfully"}
+        async with conn.transaction():
+            # 1. Get buyer_profile.id associated with this user
+            buyer = await conn.fetchrow(
+                "SELECT id FROM buyer_profile WHERE user_id = $1",
+                str(user_id)
+            )
+
+            if buyer:
+                buyer_id = buyer["id"]
+
+                # 2. Delete related orders
+                await conn.execute(
+                    'DELETE FROM "order" WHERE buyer_id = $1',
+                    str(buyer_id)
+                )
+
+                # 3. Delete buyer_profile
+                await conn.execute(
+                    "DELETE FROM buyer_profile WHERE id = $1",
+                    str(buyer_id)
+                )
+
+            # 4. Delete user
+            result = await conn.execute(
+                "DELETE FROM app_user WHERE id = $1",
+                str(user_id)
+            )
+
+            if result.endswith("0"):
+                raise HTTPException(status_code=404, detail="User not found")
+
+    return {"message": "User and related buyer profile/orders deleted successfully"}
 
 
 

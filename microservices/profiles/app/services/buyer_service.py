@@ -17,6 +17,30 @@ async def upsert_buyer_service(user_id, data, request: Request):
 
         return {"type": "success", "msg": "Profile saved", "data": dict(row)}
 
+
+#view Address
+async def buyer_view_address_service(buyer_id: int, request: Request):
+    async with request.app.state.pool.acquire() as conn:
+        row = await conn.fetch("""
+            SELECT *
+            FROM buyer_address
+            WHERE buyer_id = $1
+        """, buyer_id)
+
+        if row:
+            return {
+                "type": "success",
+                "msg": "Address retrieved",
+                 "data": [dict(r) for r in row]
+            }
+        else:
+            return {
+                "type": "error",
+                "msg": "Address not found",
+                "data": []
+            }
+
+
 #Add Address
 async def buyer_address_service(buyer_id, data, request: Request):
     async with request.app.state.pool.acquire() as conn:

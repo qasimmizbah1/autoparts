@@ -70,8 +70,8 @@ async def add_trim_service(trim, request: Request):
     async with request.app.state.pool.acquire() as conn:
         try:
             result = await conn.fetchrow(
-                "INSERT INTO vehicle_trim (id, model_id, year_from, year_to, trim) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-                uuid4(), trim.model_id, trim.year_from, trim.year_to, trim.trim
+                "INSERT INTO vehicle_trim (id, make_id, model_id, year_from, year_to, trim) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
+                uuid4(), trim.make_id, trim.model_id, trim.year_from, trim.year_to, trim.trim
             )
             return dict(result)
         except Exception:
@@ -81,8 +81,8 @@ async def add_trim_service(trim, request: Request):
 async def update_trim_service(trim_id, trim, request: Request):
     async with request.app.state.pool.acquire() as conn:
         result = await conn.execute(
-            "UPDATE vehicle_trim SET year_from=$1, year_to=$2, trim=$3 WHERE id=$4",
-            trim.year_from, trim.year_to, trim.trim, trim_id
+            "UPDATE vehicle_trim SET make_id=$1,model_id=$2,year_from=$3, year_to=$4, trim=$5 WHERE id=$6",
+            trim.make_id,trim.model_id,trim.year_from, trim.year_to, trim.trim, trim_id
         )
         if result[-1] == "0":
             raise HTTPException(status_code=404, detail="Trim not found")

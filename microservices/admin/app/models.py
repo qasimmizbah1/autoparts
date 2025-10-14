@@ -72,6 +72,7 @@ class VehicleModel(BaseModel):
     name: str
 
 class VehicleTrim(BaseModel):
+    make_id: UUID
     model_id: UUID
     year_from: Optional[int]
     year_to: Optional[int]

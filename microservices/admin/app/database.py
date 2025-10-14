@@ -49,5 +49,7 @@ async def lifespan(app: FastAPI):
                     )
         """)
 
+        
+
     yield
     await app.state.pool.close()

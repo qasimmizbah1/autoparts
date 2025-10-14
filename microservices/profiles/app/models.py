@@ -27,3 +27,14 @@ class BuyerAddressSchema(BaseModel):
     province: Optional[str] = None
     postal_code: Optional[str] = None
     country: str = "ZA"
+
+class SupplierAddressSchema(BaseModel):
+    line1: str
+    line2: Optional[str] = None
+    city: Optional[str] = None
+    province: Optional[str] = None
+    postal_code: Optional[str] = None
+    country: str = "ZA"
+
+
+    
