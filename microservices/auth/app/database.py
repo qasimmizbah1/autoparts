@@ -87,14 +87,8 @@ async def lifespan(app: FastAPI):
         await conn.execute("""
            CREATE INDEX IF NOT EXISTS system_log_meta_gin ON system_log USING GIN (meta)
         """)
-        await conn.execute("""
-           ALTER TABLE part_request DROP CONSTRAINT part_request_user_id_fkey
-        """)
-        await conn.execute("""
-                ALTER TABLE part_request 
-                ADD CONSTRAINT part_request_user_id_fkey
-                FOREIGN KEY (user_id) REFERENCES app_user(id) ON DELETE CASCADE
-        """)
+        
+       
         
 
 
