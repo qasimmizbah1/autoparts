@@ -57,8 +57,8 @@ async def add_model_service(model, request: Request):
 async def update_model_service(model_id, model, request: Request):
     async with request.app.state.pool.acquire() as conn:
         result = await conn.execute(
-            "UPDATE vehicle_model SET name=$1 WHERE id=$2",
-            model.name, model_id
+            "UPDATE vehicle_model SET make_id=$1, name=$2 WHERE id=$3",
+            model.make_id ,model.name, model_id
         )
         if result[-1] == "0":
             raise HTTPException(status_code=404, detail="Model not found")
