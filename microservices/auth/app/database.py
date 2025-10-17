@@ -3,8 +3,6 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from dotenv import load_dotenv
 import os
-import hashlib
-from utils.security import hash_password 
 
 
 load_dotenv()
@@ -16,21 +14,16 @@ DB_CONFIG = {
     "database": os.getenv("DB_NAME"),
     "host": os.getenv("DB_HOST"),
     "port": int(os.getenv("DB_PORT", 5432)),
-    "ssl": "require",
 }
-
-print("DB CONFIG:", DB_CONFIG)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.pool = await asyncpg.create_pool(**DB_CONFIG)
-
+    
     async with app.state.pool.acquire() as conn:
-    # Create users table
-
 
         await conn.execute("CREATE EXTENSION IF NOT EXISTS citext;")
-
+        # Create users table
         await conn.execute("""
                 CREATE TABLE IF NOT EXISTS app_user ( 
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(), 
@@ -42,7 +35,6 @@ async def lifespan(app: FastAPI):
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT now() 
                 )
         """)
-
         # Create verification_tokens table
         await conn.execute("""
             CREATE TABLE IF NOT EXISTS verification_tokens (
@@ -73,7 +65,6 @@ async def lifespan(app: FastAPI):
         await conn.execute("""
            CREATE EXTENSION IF NOT EXISTS pgcrypto
         """)
-
         await conn.execute("""
             CREATE TABLE IF NOT EXISTS system_log (
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -90,6 +81,7 @@ async def lifespan(app: FastAPI):
         await conn.execute("""
            CREATE INDEX IF NOT EXISTS system_log_created_at_idx ON system_log (created_at DESC)
         """)
+
         await conn.execute("""
            CREATE INDEX IF NOT EXISTS system_log_user_id_idx ON system_log (user_id)
         """)
@@ -161,6 +153,7 @@ async def lifespan(app: FastAPI):
             updated_at TIMESTAMPTZ NOT NULL DEFAULT now() 
             )
         """)
+
         await conn.execute("""
             CREATE TABLE IF NOT EXISTS buyer_profile (
                   id UUID PRIMARY KEY DEFAULT gen_random_uuid(), 
@@ -245,24 +238,54 @@ async def lifespan(app: FastAPI):
             )
         """)
 
-        #await conn.execute("""TRUNCATE TABLE app_user RESTART IDENTITY CASCADE;""")
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS password_reset_tokens (
+            id SERIAL PRIMARY KEY, 
+            user_id UUID NOT NULL,   
+            token TEXT UNIQUE NOT NULL,
+            expires_at TIMESTAMP NOT NULL,
+            created_at TIMESTAMP DEFAULT NOW(),
+            CONSTRAINT fk_user
+                FOREIGN KEY(user_id)
+                REFERENCES app_user(id)
+                ON DELETE CASCADE
+        )
+        """)
+        await conn.execute("""
+           CREATE EXTENSION IF NOT EXISTS pgcrypto
+        """)
+
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS system_log (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                user_id UUID NULL REFERENCES app_user(id) ON DELETE SET NULL,
+                level TEXT NOT NULL CHECK (level IN ('DEBUG','INFO','WARNING','ERROR','CRITICAL','AUDIT')),
+                action TEXT NOT NULL,               -- short description, e.g. "USER_LOGIN"
+                path TEXT,                          -- request path like "/auth/login"
+                ip INET,                            -- client IP
+                user_agent TEXT,
+                meta JSONB NOT NULL DEFAULT '{}'::jsonb,  -- extra data
+                created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+            )
+        """)
+        await conn.execute("""
+           CREATE INDEX IF NOT EXISTS system_log_created_at_idx ON system_log (created_at DESC)
+        """)
+        await conn.execute("""
+           CREATE INDEX IF NOT EXISTS system_log_user_id_idx ON system_log (user_id)
+        """)
+        await conn.execute("""
+          CREATE INDEX IF NOT EXISTS system_log_level_idx ON system_log (level)
+        """)
+        await conn.execute("""
+           CREATE INDEX IF NOT EXISTS system_log_meta_gin ON system_log USING GIN (meta)
+        """)
         
-        demo_users = [
-            ("qasimmizbah@gmail.com", "Admin123", "admin", True),
-            ("muskan@techbeeps.co.in", "Admin123", "buyer", True),
-            ("mprofessionalwfh@gmail.com", "Admin123", "supplier", True),
-        ]
+       
+        
+
 
         
-
-        for email, password, role, is_active in demo_users:
-            #password_hash = hashlib.sha256(password.encode()).hexdigest()
-            password_hash = hash_password(password)
-            await conn.execute("""
-                INSERT INTO app_user (email, password_hash, role, is_active)
-                VALUES ($1, $2, $3, $4)
-                ON CONFLICT (email) DO NOTHING
-            """, email, password_hash, role, is_active)
 
 
     yield
