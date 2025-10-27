@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Request, Depends
 from models import UserRequest, BuyerUpdate, SupplierUpdate, VehicleMake, VehicleModel, VehicleTrim
 from uuid import UUID, uuid4
 from deps import require_admin
+import traceback
 
 #vechile Make
 
@@ -74,8 +75,19 @@ async def add_trim_service(trim, request: Request):
                 uuid4(), trim.make_id, trim.model_id, trim.year_from, trim.year_to, trim.trim
             )
             return dict(result)
-        except Exception:
-            raise HTTPException(status_code=400, detail="Trim already exists for this model")
+        # except Exception:
+        #     raise HTTPException(status_code=400, detail="Trim already exists for this model")
+        except Exception as e:
+            # Print full traceback to the terminal for debugging
+            print("❌ Error inserting vehicle_trim:")
+            print(e)
+            traceback.print_exc()
+
+            # Re-raise a meaningful HTTPException
+            raise HTTPException(
+                status_code=400,
+                detail=f"Failed to insert trim: {str(e)}"
+            )
         
 
 async def update_trim_service(trim_id, trim, request: Request):
